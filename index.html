@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huetron</title>
+  <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+  <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" type="text/css" href='./bower_components/bootstrap/dist/css/bootstrap.css' />
+  <link rel="stylesheet" type="text/css" href='./bower_components/bootstrap-material-design/dist/css/material.css'/>
+  <link rel="stylesheet" type="text/css" href='./bower_components/bootstrap-material-design/dist/css/ripples.min.css' />
+  <link rel="stylesheet" type="text/css" href='./bower_components/font-awesome-4.4.0/css/font-awesome.min.css' />
+  <link rel="stylesheet" type="text/css" href='./bower_components/snackbarjs/snackbar.min.css' />
+  <link rel="stylesheet" type="text/css" href='./bower_components/angular-xeditable-0.1.8/css/xeditable.css'/>
+  <link rel="stylesheet" type="text/css" href='./src/css/style.css'/>
+  <base href="/"/>
+</head>
+<body>
+<div id="react-root" ng-app="huetronApp" ng-controller="huetronCtrl">
+  <div class="flex-column ng-view">
+    <div class="calendar">
+      <div class="header">
+        <div class="date">
+          <span ng-if="flags.bridgeConnected == true" class="month"><i class={{tabs[tabs_index].icon}}></i></span>
+          <span ng-if="flags.bridgeConnected == true" class="month">{{tabs[tabs_index].title}}</span>
+
+          <span ng-if="flags.bridgeConnected == false" class="month"><i class="fa fa-search"></i></span>
+          <span ng-if="flags.bridgeConnected == false" class="month">Discover</span>
+        </div >
+        <div ng-if="flags.bridgeConnected == true" class="previous" ng-click="moveTabs(false)">
+          <span class=""><i class="fa fa-caret-left"></i></span></div>
+        <div ng-if="flags.bridgeConnected == true" class="next" ng-click="moveTabs(true)">
+          <span class=""><i class="fa fa-caret-right"></i></span></div>
+      </div>
+    </div>
+
+
+    <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Lights' && flags.savingScene == false">
+      <a href="javascript:void(0)" ng-click="saveSceneControls(true)"
+         class="btn btn-danger btn-fab btn-raised btn-sm pull-right save-scene"><i class="fa fa-picture-o"></i></a>
+    </div>
+
+    <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Lights' && flags.savingScene == true" class="list-element calendar calendar-slider">
+
+        <span class="editable-controls">
+          <input type="text" class="editable-has-buttons editable-input" ng-model="data.newSceneName" placeholder="New scene name">
+          <span class="editable-buttons">
+            <button type="submit" ng-click="saveNewScene()"></button>
+            <button type="button" ng-click="saveSceneControls(false)"></button>
+          </span>
+        </span>
+
+    </div>
+
+    <div class="event-list">
+
+      <!-- Discover -->
+      <div ng-if="flags.bridgeConnected == false" class="animate-if" >
+        <button type="button" ng-click="getBridgeCreds()"  class="btn btn-primary">Connect</button>
+      </div>
+
+
+
+      <!-- Lights -->
+      <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Lights'" class="pad-btm animate-if">
+
+
+
+        <div ng-repeat="(key, l1) in data.lights" ng-controller="lightsCtrl">
+          <div class="list-element">
+            <div class="list-subelement-r row">
+
+              <div ng-if="flags.savingScene == true" class="checkbox chk-huetron"><label><input type="checkbox" ng-model="l1.selected"></label></div>
+
+              <div class="list-element-name col-xs-9" >
+                <h4 editable-text="l1.name" onaftersave="updateLightConfig(l1.id, {name: l1.name}, true)">{{ l1.name }}</h4>
+              </div>
+              <div class="col-xs-2 togglebutton pull-right">
+                <label>
+                  <input  ng-click="updateLightConfig(l1.id, {on: l1.on}, true)" type="checkbox" ng-model="l1.on" checked="">
+                </label>
+              </div>
+            </div>
+
+            <div class="row list-subelement-r2">
+              <div class="list-subelement-name col-xs-3">Brightness</div>
+              <div class="col-xs-9" ng-model="l1.brightness" slider start=0 end=254 step=10 callback='change' ></div>
+              <!--<span ng-bind="l1.brightness" class="ng-binding"></span>-->
+            </div>
+            <div class="row list-subelement-r2">
+              <div class="list-subelement-name col-xs-3">Saturation</div>
+              <div class="col-xs-9 " ng-model="l1.saturation" slider  start=0 end=254 step=10 callback='change' ></div>
+              <!--<span ng-bind="l1.saturation" class="ng-binding"></span>-->
+            </div>
+            <div class="row list-subelement-r2">
+              <div class="list-subelement-name col-xs-3">Hue</div>
+              <div class="col-xs-9 hue" ng-model="l1.hue" slider start=0 end=65535 step=100 callback='change' ></div>
+              <!--<span ng-bind="l1.hue" class="ng-binding"></span>-->
+            </div>
+          </div>
+          <hr>
+        </div>
+      </div>
+
+      <!-- Groups -->
+      <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Groups'" class="animate-if">
+        <div ng-repeat="(key, l1)  in data.groups" ng-controller="groupsCtrl">
+          <div class="list-element">
+            <div class="list-subelement-r row">
+              <div class="list-element-name col-xs-9" ng-if="l1.name != 'All'" >
+                <h4 editable-text="l1.name" onaftersave="updateGroupConfig(l1.id, {name: l1.name}, true)">{{ l1.name }}</h4>
+              </div>
+              <div class="list-element-name col-xs-9" ng-if="l1.name == 'All'" >
+                <h4>{{l1.name}}</h4>
+              </div>
+              <div class="col-xs-2 togglebutton pull-right">
+                <label>
+                  <input  ng-click="updateGroupConfig(l1.id, {on: l1.on}, true)" type="checkbox" ng-model="l1.on" checked="">
+                </label>
+              </div>
+            </div>
+
+            <div class="row list-subelement-r2">
+              <div class="list-subelement-name col-xs-3">Brightness</div>
+              <div class="col-xs-9" slider ng-model="l1.brightness" start=0 end=254 step=10 callback='change' ></div>
+              <!--<span ng-bind="l1.brightness" class="ng-binding"></span>-->
+            </div>
+            <div class="row list-subelement-r2">
+              <div class="list-subelement-name col-xs-3">Saturation</div>
+              <div class="col-xs-9 " slider ng-model="l1.saturation" start=0 end=254 step=10 callback='change' ></div>
+              <!--<span ng-bind="l1.saturation" class="ng-binding"></span>-->
+            </div>
+            <div class="row list-subelement-r2">
+              <div class="list-subelement-name col-xs-3">Hue</div>
+              <div class="col-xs-9 hue" slider ng-model="l1.hue" start=0 end=65535 step=10 callback='change' ></div>
+              <!--<span ng-bind="l1.hue" class="ng-binding"></span>-->
+            </div>
+          </div>
+          <hr>
+        </div>
+      </div>
+
+      <!-- Scenes -->
+      <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Scenes'" class="animate-if">
+        <div ng-repeat="(key, l1)  in data.scenes" ng-controller="scenesCtrl">
+          <div class="list-element">
+            <div class="list-subelement-r row">
+              <div class="list-element-name col-xs-7" >
+                <h4 editable-text="l1.name" onaftersave="updateSceneConfig(l1.id, {name: l1.name}, true)">{{ l1.name }}</h4>
+              </div>
+              <div class="col-xs-1"></div>
+              <div class="col-xs-4 pull-right">
+                <a href="javascript:void(0)" ng-click="recallScene(l1.id)"
+                   class="btn btn-primary btn-fab btn-raised btn-sm "><i class="fa fa-power-off"></i></a>
+                <a href="javascript:void(0)" ng-click="editSceneControls(l1)"
+                   class="btn btn-info btn-fab btn-raised btn-sm "><i class="fa fa-pencil"></i></a>
+              </div>
+            </div>
+
+            <div ng-if="l1.editControls == true">
+              <div class="list-subelement-r row pad-top">
+                <div class="col-xs-8"></div>
+                <div class="col-xs-4 pull-right">
+                  <a href="javascript:void(0)" ng-click="updateSceneTest(l1)"
+                     class="btn btn-success btn-fab btn-raised btn-sm "><i class="fa fa-floppy-o"></i></a>
+                  <a href="javascript:void(0)" ng-click="deleteScene(l1.id)"
+                     class="btn btn-danger btn-fab btn-raised btn-sm"><i class="fa fa-trash"></i></a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr>
+        </div>
+      </div>
+
+      <!-- Schedules -->
+      <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Schedules'" class="animate-if">
+
+      </div>
+
+      <!-- Music -->
+      <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Music'" class="animate-if">
+
+      </div>
+
+      <!-- Settings -->
+      <div ng-if="flags.bridgeConnected == true && tabs[tabs_index].title == 'Settings'" class="animate-if">
+
+      </div>
+
+
+    </div>
+  </div>
+</div>
+</body>
+
+<div id="javascript-imports">
+  <script>require('./renderer.js')</script>
+  <script>$.material.init()</script>
+</div>
+</html>
